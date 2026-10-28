@@ -135,20 +135,31 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
             if (when.type === "no-schedule") {
               return "Not a valid schedule input";
             }
-            const input =
+            const input: Date | string | number | null =
               when.type === "scheduled"
-                ? when.date
+                ? new Date(when.date)
                 : when.type === "delayed"
                   ? when.delayInSeconds
                   : when.type === "cron"
                     ? when.cron
                     : null;
             if (!input) return "Invalid schedule type";
+            if (input instanceof Date && Number.isNaN(input.getTime())) {
+              return `Error scheduling task: invalid date "${when.type === "scheduled" ? when.date : ""}"`;
+            }
+            const label =
+              when.type === "scheduled"
+                ? when.date
+                : when.type === "delayed"
+                  ? when.delayInSeconds
+                  : when.type === "cron"
+                    ? when.cron
+                    : "";
             try {
-              this.schedule(input, "executeTask", description, {
+              await this.schedule(input, "executeTask", description, {
                 idempotent: true
               });
-              return `Task scheduled: "${description}" (${when.type}: ${input})`;
+              return `Task scheduled: "${description}" (${when.type}: ${label})`;
             } catch (error) {
               return `Error scheduling task: ${error}`;
             }
